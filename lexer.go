@@ -17,7 +17,7 @@
 // ensuring that the expression consists of valid Go source code.
 //
 // In 2011 Rob Pike presented a lexical analyzer written in Go at the Sydney Google
-// Technology User Group (see http://youtu.be/HxaD_trXwRE). Pike's talk covered many 
+// Technology User Group (see http://youtu.be/HxaD_trXwRE). Pike's talk covered many
 // topics but really converged on two powerful concepts:
 //
 //     1. Representing state and state changes as functions
@@ -29,14 +29,14 @@
 // character in its sequence of characters and, based on the state it is currently in,
 // determine which valid state to enter.
 //
-// Functions are a great way to represent states, and transitions between states, in a 
-// state machine. The lexical analyzer that is the subject of Pike's talk is inialized 
-// with a function representing its initial state. This function is then able to inspect 
-// the input and, based on what it encounters and its position in that input, can return 
+// Functions are a great way to represent states, and transitions between states, in a
+// state machine. The lexical analyzer that is the subject of Pike's talk is inialized
+// with a function representing its initial state. This function is then able to inspect
+// the input and, based on what it encounters and its position in that input, can return
 // the next state the lexical analyzer should transition to.
 //
-// The process of emitting tokens during lexical analysis can be greatly simplified by 
-// taking advantage of Go's concurrency primitives. Running the state machine that drives 
+// The process of emitting tokens during lexical analysis can be greatly simplified by
+// taking advantage of Go's concurrency primitives. Running the state machine that drives
 // the lexical analyzer in a goroutine allows emitted tokens to be sent to a specific
 // channel; decoupling the two responsibilities almost entirely.
 //
@@ -82,6 +82,7 @@ type Lexer struct {
 	CurrentRuneWidth RuneWidth
 	initialState     StateFunction
 	startPosition    RunePosition
+	currentToken     Token
 	previousToken    Token
 	tokens           chan Token
 }
@@ -91,7 +92,7 @@ func NewLexer(input string, initialState StateFunction) *Lexer {
 	l := &Lexer{
 		Input:        input,
 		initialState: initialState,
-		tokens:       make(chan Token),
+		tokens:       make(chan Token, 1),
 	}
 	go func() {
 		for state := l.initialState; state != nil; {
@@ -122,7 +123,7 @@ func (l *Lexer) Next() rune {
 // NextForAll returns runes from the input where the specified predicate does apply.
 func (l *Lexer) NextForAll(predicate RunePredicate) []rune {
 	var r rune
-	rs := make([]rune, len(l.Input))
+	rs := make([]rune, 0)
 	for {
 		r = l.Peek()
 		if !predicate(r) || r == EOF {
@@ -177,7 +178,8 @@ func (l *Lexer) IgnoreUpTo(predicate RunePredicate) rune {
 func (l *Lexer) Emit(tokenType TokenType) {
 	token := Token{tokenType, l.Input[l.startPosition:l.CurrentPosition]}
 	l.tokens <- token
-	l.previousToken = token
+	l.previousToken = l.currentToken
+	l.currentToken = token
 	l.startPosition = l.CurrentPosition
 }
 
