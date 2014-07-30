@@ -45,6 +45,7 @@ package lexer
 
 import (
 	"fmt"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -84,6 +85,7 @@ type Lexer struct {
 	startPosition    RunePosition
 	currentToken     Token
 	previousToken    Token
+	tokenMutex       sync.Mutex
 	tokens           chan Token
 }
 
@@ -178,13 +180,17 @@ func (l *Lexer) IgnoreUpTo(predicate RunePredicate) rune {
 func (l *Lexer) Emit(tokenType TokenType) {
 	token := Token{tokenType, l.Input[l.startPosition:l.CurrentPosition]}
 	l.tokens <- token
+	l.tokenMutex.Lock()
 	l.previousToken = l.currentToken
 	l.currentToken = token
+	l.tokenMutex.Unlock()
 	l.startPosition = l.CurrentPosition
 }
 
 // PreviousToken returns the most recently emitted token.
 func (l *Lexer) PreviousToken() Token {
+	l.tokenMutex.Lock()
+	defer l.tokenMutex.Unlock()
 	return l.previousToken
 }
 
