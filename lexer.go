@@ -109,8 +109,10 @@ func (l *Lexer) NextToken() Token {
 	return <-l.tokens
 }
 
-// Next returns the next rune from the input and moves the current position of the
-// lexer ahead. If encountering the end of the input EOF will be returned.
+// Next returns the next rune from the input and moves the current position of the lexer
+// ahead.
+//
+// If encountering the end of the input EOF will be returned.
 func (l *Lexer) Next() rune {
 	if int(l.CurrentPosition) >= len(l.Input) {
 		l.CurrentRuneWidth = 0
@@ -122,19 +124,12 @@ func (l *Lexer) Next() rune {
 	return r
 }
 
-// NextForAll returns runes from the input where the specified predicate does apply.
-func (l *Lexer) NextForAll(predicate RunePredicate) []rune {
-	var r rune
-	rs := make([]rune, 0)
-	for {
-		r = l.Peek()
-		if !predicate(r) || r == EOF {
-			break
-		}
-		rs = append(rs, r)
-		r = l.Next()
-	}
-	return rs
+// NextUpTo returns the rune last seen by the predicate and moves the current position of
+// the lexer ahead.
+//
+// Returns EOF if the end of input is encountered before the predicate is satisfied.
+func (l *Lexer) NextUpTo(predicate RunePredicate) rune {
+	return l.consumeUpTo(predicate, l.Next)
 }
 
 // Peek returns the next rune from the input without moving the current position of the
@@ -145,8 +140,8 @@ func (l *Lexer) Peek() rune {
 	return r
 }
 
-// Previous returns the previous rune from the input and moves the current position of the
-// lexer behind.
+// Previous returns the previous rune from the input and moves the current position of
+// the lexer behind.
 func (l *Lexer) Previous() rune {
 	l.CurrentPosition -= RunePosition(l.CurrentRuneWidth)
 	r, _ := utf8.DecodeRuneInString(l.Input[l.CurrentPosition:])
@@ -160,20 +155,11 @@ func (l *Lexer) Ignore() rune {
 	return r
 }
 
-// IgnoreUpTo skips runes from the input where the specified predicate does not apply.
+// IgnoreUpTo skips runes from the input and returns the rune last seen by the predicate.
 //
-// The rune last seen by the predicate is returned; however, if the end of the input is
-// encountered before the predicate is satisfied EOF is returned instead.
+// Returns EOF if the end of input is encountered before the predicate is satisfied.
 func (l *Lexer) IgnoreUpTo(predicate RunePredicate) rune {
-	var r rune
-	for {
-		r = l.Peek()
-		if predicate(r) || r == EOF {
-			break
-		}
-		r = l.Ignore()
-	}
-	return r
+	return l.consumeUpTo(predicate, l.Ignore)
 }
 
 // Emit emits a token of the specified type.
@@ -198,4 +184,16 @@ func (l *Lexer) PreviousToken() Token {
 func (l *Lexer) Errorf(format string, args ...interface{}) StateFunction {
 	l.tokens <- Token{TokenError, fmt.Sprintf(format, args...)}
 	return nil
+}
+
+func (l *Lexer) consumeUpTo(predicate RunePredicate, consumer func() rune) rune {
+	var r rune
+	for {
+		r = l.Peek()
+		if predicate(r) || r == EOF {
+			break
+		}
+		r = consumer()
+	}
+	return r
 }
