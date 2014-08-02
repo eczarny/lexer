@@ -21,7 +21,7 @@ var _ = Describe("Lexer", func() {
 	}
 
 	It("should return the next token emitted by the lexer (i.e. NextToken and Emit)", func() {
-		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			l.Next()
 			l.Emit(Token)
 			return nil
@@ -32,7 +32,7 @@ var _ = Describe("Lexer", func() {
 	It("should return the next rune from the input and moves the current position of the lexer ahead (i.e. Next)", func(done Done) {
 		r := make(chan rune)
 		p := make(chan lexer.RunePosition)
-		l := lexer.NewLexer("a^2 + b^2 = c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("a^2 + b^2 = c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			p <- l.CurrentPosition
 			r <- l.Next()
 			p <- l.CurrentPosition
@@ -57,7 +57,7 @@ var _ = Describe("Lexer", func() {
 	It("should return the rune last seen by the predicate and moves the current position of the lexer ahead (i.e. NextUpTo)", func(done Done) {
 		r := make(chan rune)
 		p := make(chan lexer.RunePosition)
-		l := lexer.NewLexer("3.14", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("3.14", func(l *lexer.Lexer) lexer.StateFunc {
 			p <- l.CurrentPosition
 			r <- l.NextUpTo(func(r rune) bool {
 				return !numeric(r)
@@ -76,7 +76,7 @@ var _ = Describe("Lexer", func() {
 	It("should return the next rune from the input without moving the current position of the lexer ahead (i.e. Peek)", func(done Done) {
 		r := make(chan rune)
 		p := make(chan lexer.RunePosition)
-		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			p <- l.CurrentPosition
 			r <- l.Peek()
 			p <- l.CurrentPosition
@@ -93,7 +93,7 @@ var _ = Describe("Lexer", func() {
 	It("should return the previous rune from the input and moves the current position of the lexer behind (i.e. Previous)", func(done Done) {
 		r := make(chan rune)
 		p := make(chan lexer.RunePosition)
-		l := lexer.NewLexer("C = 2 * Pi * r", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("C = 2 * Pi * r", func(l *lexer.Lexer) lexer.StateFunc {
 			p <- l.CurrentPosition
 			r <- l.Next()
 			p <- l.CurrentPosition
@@ -113,7 +113,7 @@ var _ = Describe("Lexer", func() {
 
 	It("should skip and return the next rune from the input (i.e. Ignore)", func(done Done) {
 		r := make(chan rune)
-		l := lexer.NewLexer("e = 2.71", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("e = 2.71", func(l *lexer.Lexer) lexer.StateFunc {
 			r <- l.Next()
 			l.Emit(Token)
 			r <- l.Ignore()
@@ -139,7 +139,7 @@ var _ = Describe("Lexer", func() {
 	It("should skip runes from the input and return the rune last seen by the predicate (i.e. IgnoreUpTo)", func(done Done) {
 		r := make(chan rune)
 		p := make(chan lexer.RunePosition)
-		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			r <- l.IgnoreUpTo(func(r rune) bool {
 				return r == 'c'
 			})
@@ -166,7 +166,7 @@ var _ = Describe("Lexer", func() {
 	})
 
 	It("should return the most recently emitted token (i.e. PreviousToken)", func(done Done) {
-		l := lexer.NewLexer("a^2 + b^2 = c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("a^2 + b^2 = c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			p := func(r rune) bool {
 				return !(r == 'a' || r == 'b' || r == 'c' || r == '^' || r == '2')
 			}
@@ -201,7 +201,7 @@ var _ = Describe("Lexer", func() {
 	})
 
 	It("should emit an error token with the specified error message as its value (i.e. Errorf)", func() {
-		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunction {
+		l := lexer.NewLexer("E = m * c^2", func(l *lexer.Lexer) lexer.StateFunc {
 			return l.Errorf("Unexpected input")
 		})
 		assertToken(l.NextToken(), lexer.TokenError, "Unexpected input")

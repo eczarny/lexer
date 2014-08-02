@@ -70,8 +70,8 @@ type RunePosition int
 // RuneWidth represents the width of a rune.
 type RuneWidth int
 
-// StateFunction is a function that represents the state of the lexer.
-type StateFunction func(*Lexer) StateFunction
+// StateFunc is a function that represents the state of the lexer.
+type StateFunc func(*Lexer) StateFunc
 
 // RunePredicate is a function that returns true or false based on the specified rune.
 type RunePredicate func(rune) bool
@@ -81,7 +81,7 @@ type Lexer struct {
 	Input            string
 	CurrentPosition  RunePosition
 	CurrentRuneWidth RuneWidth
-	initialState     StateFunction
+	initialState     StateFunc
 	startPosition    RunePosition
 	currentToken     Token
 	previousToken    Token
@@ -90,7 +90,7 @@ type Lexer struct {
 }
 
 // NewLexer creates a lexer from the input and initial state.
-func NewLexer(input string, initialState StateFunction) *Lexer {
+func NewLexer(input string, initialState StateFunc) *Lexer {
 	l := &Lexer{
 		Input:        input,
 		initialState: initialState,
@@ -181,7 +181,7 @@ func (l *Lexer) Emit(tokenType TokenType) {
 }
 
 // Errorf emits an error token with the specified error message as its value.
-func (l *Lexer) Errorf(format string, args ...interface{}) StateFunction {
+func (l *Lexer) Errorf(format string, args ...interface{}) StateFunc {
 	l.tokens <- Token{TokenError, fmt.Sprintf(format, args...)}
 	return nil
 }
