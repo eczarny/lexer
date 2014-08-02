@@ -109,6 +109,13 @@ func (l *Lexer) NextToken() Token {
 	return <-l.tokens
 }
 
+// PreviousToken returns the most recently emitted token.
+func (l *Lexer) PreviousToken() Token {
+	l.tokenMutex.Lock()
+	defer l.tokenMutex.Unlock()
+	return l.previousToken
+}
+
 // Next returns the next rune from the input and moves the current position of the lexer
 // ahead.
 //
@@ -171,13 +178,6 @@ func (l *Lexer) Emit(tokenType TokenType) {
 	l.currentToken = token
 	l.tokenMutex.Unlock()
 	l.startPosition = l.CurrentPosition
-}
-
-// PreviousToken returns the most recently emitted token.
-func (l *Lexer) PreviousToken() Token {
-	l.tokenMutex.Lock()
-	defer l.tokenMutex.Unlock()
-	return l.previousToken
 }
 
 // Errorf emits an error token with the specified error message as its value.
