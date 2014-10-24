@@ -97,8 +97,8 @@ func NewLexer(input string, initialState StateFunc) *Lexer {
 		tokens:       make(chan Token, 1),
 	}
 	go func() {
-		for state := l.initialState; state != nil; {
-			state = state(l)
+		for s := l.initialState; s != nil; {
+			s = s(l)
 		}
 	}()
 	return l
@@ -171,11 +171,11 @@ func (l *Lexer) IgnoreUpTo(predicate RunePredicate) rune {
 
 // Emit emits a token of the specified type.
 func (l *Lexer) Emit(tokenType TokenType) {
-	token := Token{tokenType, l.Input[l.startPosition:l.CurrentPosition]}
-	l.tokens <- token
+	t := Token{tokenType, l.Input[l.startPosition:l.CurrentPosition]}
+	l.tokens <- t
 	l.tokenMutex.Lock()
 	l.previousToken = l.currentToken
-	l.currentToken = token
+	l.currentToken = t
 	l.tokenMutex.Unlock()
 	l.startPosition = l.CurrentPosition
 }
